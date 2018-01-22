@@ -1152,6 +1152,8 @@ class AnsibleComponentMatcher(object):
                     meta['maintainers'] += fdata['maintainers']
                 if 'ignore' in fdata:
                     meta['ignore'] += fdata['ignore']
+                if 'ignored' in fdata:
+                    meta['ignore'] += fdata['ignored']
                 if 'notify' in fdata:
                     meta['notify'] += fdata['notify']
 
@@ -1167,7 +1169,7 @@ class AnsibleComponentMatcher(object):
             meta['namespace'] = '/'.join(topics)
 
         # set namespace maintainers (skip !modules for now)
-        if filename.startswith('lib/ansible/modules'):
+        if filename.startswith('lib/ansible/modules') and meta.get('namespace'):
             ns = meta.get('namespace')
             keys = self.BOTMETA['files'].keys()
             keys = [x for x in keys if x.startswith(os.path.join('lib/ansible/modules', ns))]
@@ -1177,7 +1179,12 @@ class AnsibleComponentMatcher(object):
                 meta['namespace_maintainers'] += self.BOTMETA['files'][key].get('maintainers', [])
                 ignored += self.BOTMETA['files'][key].get('ignored', [])
 
+            meta['namespace_maintainers'] = sorted(set(meta['namespace_maintainers']))
+
+            ignored = sorted(set(ignored))
             for ignoree in ignored:
+                if ignoree not in meta['ignore']:
+                    meta['ignore'].append(ignoree)
                 while ignoree in meta['namespace_maintainers']:
                     meta['namespace_maintainers'].remove(ignoree)
 
